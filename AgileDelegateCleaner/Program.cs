@@ -77,36 +77,33 @@ namespace AgileDelegateCleaner {
                     var typeToken = initializerBody.Instructions.First().GetLdcI4Constant();
 
                     // Try Resolving.
-                    if (!module.TryLookupMember(new((uint)(33554433 + typeToken)), out _)) continue;
-
-                    uint methodToken;
-                    IMetadataMember realMember = null;
-                    bool isVirtualCall = false;
-
-                    for (int i = 0; i < delegateType.Fields.Count; i++) { 
-                        var field = delegateType.Fields[i];
-                        string fieldName = field.Name;
-                        isVirtualCall = false;
-                        if (fieldName.EndsWith("%")) {
-                            isVirtualCall = true;
-                            fieldName = fieldName.TrimEnd('%');
-                        }
-                        methodToken = BitConverter.ToUInt32(Convert.FromBase64String(fieldName), 0);
-
-                        if (module.TryLookupMember(new(methodToken + 167772161U), out realMember))
-                            break;
-                        else
-                            continue;
-                    }
-
-                    var realMethod = realMember as IMethodDescriptor;
-
-                    if (realMethod is null) continue;
+                    if (!module.TryLookupMember(new((uint)(0x2000001 + typeToken)), out _)) continue;
 
                     // Get Bad Field Instruction.
                     var badInstruction = callExpression.FirstOrDefault(x => x.OpCode.Code == CilCode.Ldsfld && x.Operand is FieldDefinition delegateField && delegateField.DeclaringType is TypeDefinition fieldType && fieldType.IsDelegate);
 
                     if (badInstruction is null) continue;
+
+                    uint methodToken;
+                    IMetadataMember realMember = null;
+                    bool isVirtualCall = false;
+
+                    var field = (IFieldDescriptor)badInstruction.Operand;
+                    string fieldName = field.Name;
+                    isVirtualCall = false;
+
+                    if (fieldName.EndsWith("%")) {
+                        isVirtualCall = true;
+                        fieldName = fieldName.TrimEnd('%');
+                    }
+
+                    methodToken = BitConverter.ToUInt32(Convert.FromBase64String(fieldName), 0);
+
+                    if (!module.TryLookupMember(new(methodToken + 0xA000001U), out realMember)) continue;
+
+                    var realMethod = realMember as IMethodDescriptor;
+
+                    if (realMethod is null) continue; 
 
                     // Nope BadInstruction.
                     badInstruction.OpCode = CilOpCodes.Nop;
