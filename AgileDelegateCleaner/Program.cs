@@ -69,15 +69,7 @@ namespace AgileDelegateCleaner {
 
                     if (!(delegateInitializer.CilMethodBody is CilMethodBody initializerBody)) continue;
 
-                    if (!(initializerBody.Instructions.Count >= 3)) continue;
-
-                    if (!(initializerBody.Instructions.First().IsLdcI4())) continue;
-
-                    // Get TypeToken From Delegate cctor (Type Initializer).
-                    var typeToken = initializerBody.Instructions.First().GetLdcI4Constant();
-
-                    // Try Resolving.
-                    if (!module.TryLookupMember(new((uint)(0x2000001 + typeToken)), out _)) continue;
+                    if (!(initializerBody.Instructions.Count >= 3)) continue; 
 
                     // Get Bad Field Instruction.
                     var badInstruction = callExpression.FirstOrDefault(x => x.OpCode.Code == CilCode.Ldsfld && x.Operand is FieldDefinition delegateField && delegateField.DeclaringType is TypeDefinition fieldType && fieldType.IsDelegate);
